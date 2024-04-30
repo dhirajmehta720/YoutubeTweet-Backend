@@ -1,12 +1,11 @@
 const asyncHandler = (requestHandler) => {
-  return (req, res, error) => {
-    return Promise.resolve(requestHandler(req, res, error)).catch((error) =>
-      next(error)
-    );
+  return (req, res, next) => {
+    return Promise.resolve(requestHandler(req, res, next)).catch((error) => next(error));
   };
 };
 
 export { asyncHandler };
+
 
 // its just a wrapper function, instead of writing everytime aysnc await we use this function to wrap the functions as a async await function
 
