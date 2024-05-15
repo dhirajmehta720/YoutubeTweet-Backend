@@ -1,7 +1,7 @@
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/ApiError.js";
 import { User } from "../models/user.model.js";
-import { uploadOnCloudinary } from "../utils/cloudinary.js";
+import { deleteFromCloudinary, uploadOnCloudinary } from "../utils/cloudinary.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import jwt from "jsonwebtoken";
 
@@ -173,6 +173,7 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
   if (!incomingRefreshToken) {
     throw new ApiError(401, "unauthorized request");
   }
+  
   try {
     const decodedToken = jwt.verify(
       incomingRefreshToken,
@@ -180,8 +181,7 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
     );
 
     const user = await User.findById(decodedToken?._id);
-    console.log(user);
-    console.log(incomingRefreshToken);
+    
     if (!user) {
       throw new ApiError(401, "Invalid refresh token");
     }
@@ -194,16 +194,17 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
       secure: true,
     };
 
-    const { accessToken, newRefreshToken } =
+    const { accessToken, refreshToken } =
       await generateAccessAndRefreshTokens(user._id);
+
     return res
       .status(200)
       .cookie("accessToken", accessToken, options)
-      .cookie("refreshToken", newRefreshToken, options)
+      .cookie("refreshToken", refreshToken, options)
       .json(
         new ApiResponse(
           200,
-          { accessToken, refreshToken: newRefreshToken },
+          { accessToken, refreshToken },
           "Access token refreshed successfully"
         )
       );
@@ -234,12 +235,12 @@ const changeCurrentPassword = asyncHandler(async (req, res) => {
 const getCurrentUser = asyncHandler(async (req, res) => {
   return res
     .status(200)
-    .json(200, req.user, "current user fetched successfully");
+    .json(new ApiResponse(200, req.user, "current user fetched successfully"));
 });
 
 const updateAccountDetails = asyncHandler(async (req, res) => {
-  const { fullName, email } = req.body;
-
+  const { email, fullName } = req.body;
+  console.log(req);
   if (!fullName || !email) {
     throw new ApiError(400, "All fields are required");
   }
@@ -248,7 +249,7 @@ const updateAccountDetails = asyncHandler(async (req, res) => {
     req.user?._id,
     {
       $set: {
-        fullName,
+        fullName : fullName,
         email: email,
       },
     },
@@ -262,17 +263,19 @@ const updateAccountDetails = asyncHandler(async (req, res) => {
 
 const updateUserAvatar = asyncHandler(async (req, res) => {
   const avatarLocalPath = req.file?.path;
-
   if (!avatarLocalPath) {
     throw new ApiError(400, "Avatar file is missing");
   }
 
   //TODO: delete old image - assignment
+  const avatarURL = req.user.avatar;
+  const publicId =  avatarURL.split('/').slice(-2).join('/').split('/').slice(1).join('/').split('.')[0];
+  await deleteFromCloudinary(publicId);
 
   const avatar = await uploadOnCloudinary(avatarLocalPath);
 
   if (!avatar.url) {
-    throw new ApiError(400, "Error while uploading on avatar");
+    throw new ApiError(400, "Error while uploading on cloudinary");
   }
 
   const user = await User.findByIdAndUpdate(
@@ -296,8 +299,10 @@ const updateUserCoverImage = asyncHandler(async (req, res) => {
   if (!coverImageLocalPath) {
     throw new ApiError(400, "Cover image file is missing");
   }
-
   //TODO: delete old image - assignment
+  const coverImageURL = req.user.coverImage;
+  const publicId =  coverImageURL.split('/').slice(-2).join('/').split('/').slice(1).join('/').split('.')[0];
+  await deleteFromCloudinary(publicId);
 
   const coverImage = await uploadOnCloudinary(coverImageLocalPath);
 
@@ -320,7 +325,7 @@ const updateUserCoverImage = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, user, "Cover image updated successfully"));
 });
 
-const getUserCurrentProfile = asyncHandler(async (req, res) => {
+const getUserChannelProfile = asyncHandler(async (req, res) => {
   const { username } = req.params;
   if (!username?.trim) {
     throw new ApiError(400, "username is missing");
@@ -456,6 +461,6 @@ export {
   updateAccountDetails,
   updateUserAvatar,
   updateUserCoverImage,
-  getUserCurrentProfile,
+  getUserChannelProfile,
   getWatchHistory
 };
