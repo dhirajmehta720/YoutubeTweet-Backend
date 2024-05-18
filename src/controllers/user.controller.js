@@ -299,6 +299,7 @@ const updateUserCoverImage = asyncHandler(async (req, res) => {
   if (!coverImageLocalPath) {
     throw new ApiError(400, "Cover image file is missing");
   }
+  
   //TODO: delete old image - assignment
   const coverImageURL = req.user.coverImage;
   const publicId =  coverImageURL.split('/').slice(-2).join('/').split('/').slice(1).join('/').split('.')[0];
