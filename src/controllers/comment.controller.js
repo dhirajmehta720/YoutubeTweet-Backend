@@ -9,7 +9,35 @@ import { Like } from "../models/like.model.js";
 const getVideoComments = asyncHandler(async (req, res) => {
   //TODO: get all comments for a video
   const { videoId } = req.params;
-  const { page = 1, limit = 10 } = req.query;
+  const { limit = 20, sortType = "asc" } = req.query;
+  const page = parseInt(req.query.p) || 0; // Ensure `page` is an integer
+  const sortDirection = sortType === "asc" ? 1 : -1; // Ensure sorting direction is correct
+
+  try {
+    const fetchedComments = await Comment.find({ video: videoId })
+      .sort({ createdAt: sortDirection }) // Sorting by createdAt in the specified order
+      .skip(page * limit)
+      .limit(parseInt(limit)); // Ensure `limit` is an integer
+
+    if (fetchedComments.length === 0) {
+      return res.status(404).json({
+        status: 404,
+        message: "No comments found for the given video",
+      });
+    }
+
+    return res.status(200).json({
+      status: 200,
+      comments: fetchedComments,
+      message: "Comments fetched successfully",
+    });
+  } catch (error) {
+    return res.status(500).json({
+      status: 500,
+      message: "An error occurred while fetching comments",
+      error: error.message,
+    });
+  }
 });
 
 const addComment = asyncHandler(async (req, res) => {
