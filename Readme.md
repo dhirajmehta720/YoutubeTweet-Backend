@@ -2,7 +2,7 @@
 
 ## Overview
 
-This repository [VideoTube](https://github.com/saranzafar/Backend-Boy/tree/main/VideoTube) is part of a comprehensive video series on backend development with JavaScript. The project showcases the development of a complete backend system for a video hosting website similar to YouTube + Tweeter or X.
+This repository [VideoTube](https://github.com/dhirajmehta720/YoutubeTweet-Backend) is part of a comprehensive video series on backend development with JavaScript. The project showcases the development of a complete backend system for a video hosting website similar to YouTube + Tweeter or X.
 
 ## Project Links
 
